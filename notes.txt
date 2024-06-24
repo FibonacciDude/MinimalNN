@@ -1,0 +1,54 @@
+
+some notes on basic ml models & how to manually backprop
+
+optim:
+-sgd+momentum
+    m=t*m+(1-t)*dw
+    w=w-lr*m
+-rmsprop
+    v=t*v+(1-t)*dw**2
+    w=w-lr*dw/np.sqrt(v+eps)
+-adam
+    t+=1 (time)
+    m=beta1*m+(1-beta1)*dw
+    v=beta2*v+(1-beta2)*dw**2
+    mt=m/(1-beta1**t)
+    vt=v/(1-beta2**t)
+    w=w-lr*mt/np.sqrt(vt+eps)
+
+layers & implts:
+vision models
+    -batchnorm
+        forward:
+            gamma*((x-x.mean(0))/np.sqrt(x.var(0)+eps))+beta
+        backward - tight!
+            dbeta=dout.sum(0)
+            dgamma=(norm*dout).sum(0)
+            dx=gamma*std_inv*(dout-1/N*(norm*dgamma+dbeta))
+
+    -convolutional nets / layers 
+        -input x -> (W,H,C)
+        -filter f -> (fw,fh,C), stride s, padding p
+            -shape after filter - ((W-fw+2*p)//s+1)
+        -(convolte) f.T@x_chunk+b (bias-scalar)
+            -output-> k indpt activation map
+            -max pooling - same depth k, also filter sized
+        -forward and backwards pass ->
+            -forward is a convolution over the input
+            -backwards is also a convolution  - (sum for filter, projection addition for input)
+
+language models
+    -rnn: linear transforms
+        -Whh@hprev -> ht_h
+        -Wxh@x -> ht_x
+        -tanh(ht_x + ht_h) -> ht_next
+        -Whout@ht -> y_out
+    -lstm: cell & hidden state
+        -(linear transform) W@(x_t-1, x_below)+b -> f,g,i,o gates (linear)
+        -f (forget gate on c_t-1) ,g (add to c), i (filter over g), o (h output)
+        -c_prev * f + g * i -> ct_next
+        -o * ct_next -> ht_next
+        -note: lstm is additive (into the c_next w/o forget), so helps with gradient vanishing
+    -gru: only h-vector
+        -but (1-z) * prev + z * curr
+    -transformer: see my other repo :)
